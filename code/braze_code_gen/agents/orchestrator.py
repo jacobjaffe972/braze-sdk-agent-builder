@@ -26,11 +26,11 @@ from braze_code_gen.utils.exporter import HTMLExporter
 logger = logging.getLogger(__name__)
 
 
-class BrazeCodeGenerator:
+class Orchestrator:
     """Main orchestrator for Braze SDK landing page generation.
 
     This class coordinates the 6-agent workflow:
-    1. Lead Agent - Feature planning and branding extraction
+    1. Planning Agent - Feature planning and branding extraction
     2. Research Agent - Braze documentation queries
     3. Code Generation Agent - HTML/CSS/JS generation
     4. Validation Agent - Browser testing
@@ -101,7 +101,7 @@ class BrazeCodeGenerator:
         except Exception as e:
             logger.warning(f"Could not initialize Opik tracing: {e}")
 
-        logger.info("BrazeCodeGenerator initialized successfully")
+        logger.info("Orchestrator initialized successfully")
 
     def _initialize_agents(self):
         """Initialize all agent instances."""
