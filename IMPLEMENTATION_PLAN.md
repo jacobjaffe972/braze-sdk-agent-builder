@@ -20,7 +20,7 @@ Build a multi-agent code generation system that creates fully functional Braze S
 
 ### Design Pattern
 Following the proven delegation pattern from [react_multi_agent.py](code/deep_research/agents/react_multi_agent.py):
-- Main `BrazeCodeGenerator` class delegates to specialized agents
+- Main `Orchestrator` class delegates to specialized agents
 - TypedDict state management with Pydantic models
 - StateGraph workflow with conditional routing
 - LangChain @tool wrappers for MCP integration
@@ -34,7 +34,7 @@ API Configuration Form (validate API key + REST endpoint)
     ↓
 User Input (Gradio chat: features + customer website URL)
     ↓
-Lead Agent (extract URL → analyze website → create feature plan with branding)
+Planning Agent (extract URL → analyze website → create feature plan with branding)
     ↓
 Research Agent (query Braze Docs MCP)
     ↓
@@ -60,8 +60,8 @@ braze_code_gen/
 ├── __init__.py
 ├── agents/
 │   ├── __init__.py
-│   ├── braze_code_generator.py      # Main orchestrator (ChatInterface implementation)
-│   ├── lead_agent.py                # Feature planning from user input
+│   ├── orchestrator.py              # Main orchestrator (ChatInterface implementation)
+│   ├── planning_agent.py            # Feature planning from user input
 │   ├── research_agent.py            # MCP documentation queries
 │   ├── code_generation_agent.py     # HTML/CSS/JS generation
 │   ├── validation_agent.py          # Playwright browser testing
@@ -209,7 +209,7 @@ def create_braze_workflow(...) -> CompiledGraph:
     workflow = StateGraph(CodeGenerationState)
 
     # Add nodes
-    workflow.add_node("lead", lead_agent)
+    workflow.add_node("planning", planning_agent)
     workflow.add_node("research", research_agent)
     workflow.add_node("code_generation", code_gen_agent)
     workflow.add_node("validation", validation_agent)
@@ -217,8 +217,8 @@ def create_braze_workflow(...) -> CompiledGraph:
     workflow.add_node("finalization", finalization_agent)
 
     # Linear edges
-    workflow.add_edge(START, "lead")
-    workflow.add_edge("lead", "research")
+    workflow.add_edge(START, "planning")
+    workflow.add_edge("planning", "research")
     workflow.add_edge("research", "code_generation")
     workflow.add_edge("code_generation", "validation")
 
@@ -271,10 +271,10 @@ class BrazeCodeTester:
 ```
 
 ### 5. Main Orchestrator
-**File**: [braze_code_gen/agents/braze_code_generator.py](code/braze_code_gen/agents/braze_code_generator.py)
+**File**: [braze_code_gen/agents/orchestrator.py](code/braze_code_gen/agents/orchestrator.py)
 
 ```python
-class BrazeCodeGenerator(ChatInterface):
+class Orchestrator(ChatInterface):
     """Main orchestrator implementing ChatInterface."""
 
     def initialize(self) -> None:
@@ -289,7 +289,7 @@ class BrazeCodeGenerator(ChatInterface):
         self.browser_tester.start()
 
         # Create agent instances
-        self.lead_agent = LeadAgent(self.llm)
+        self.planning_agent = PlanningAgent(self.llm)
         self.research_agent = ResearchAgent(self.llm)
         # ... etc
 
@@ -312,7 +312,7 @@ class BrazeCodeGenerator(ChatInterface):
 
 ### 6. Individual Agents
 
-**Lead Agent** [braze_code_gen/agents/lead_agent.py](code/braze_code_gen/agents/lead_agent.py):
+**Lead Agent** [braze_code_gen/agents/planning_agent.py](code/braze_code_gen/agents/planning_agent.py):
 - Parses user input (natural language)
 - **NEW**: Extracts customer website URL from message (regex + LLM fallback)
 - **NEW**: Calls `WebsiteAnalyzer.analyze_website()` to extract branding
@@ -426,7 +426,7 @@ Add real-time streaming of agent thoughts, intermediate steps, and responses to 
 Add streaming method that wraps LangGraph's built-in `.stream()`:
 
 ```python
-class BrazeCodeGeneratorWorkflow:
+class OrchestratorWorkflow:
     def stream_workflow(self, state: CodeGenerationState):
         """Stream workflow execution with intermediate updates."""
         for chunk in self.graph.stream(state):
@@ -453,7 +453,7 @@ class BrazeCodeGeneratorWorkflow:
     def _format_node_status(self, node_name: str, output: dict) -> str:
         """Format node completion status for UI."""
         status_messages = {
-            "lead": "✓ Feature plan created with customer branding",
+            "planning": "✓ Feature plan created with customer branding",
             "research": "✓ Braze documentation research complete",
             "code_generation": "✓ Landing page code generated",
             "validation": "✓ Browser validation complete" if output.get("validation_passed") else "⚠ Validation issues detected, starting refinement",
@@ -463,12 +463,12 @@ class BrazeCodeGeneratorWorkflow:
         return status_messages.get(node_name, f"✓ {node_name} complete")
 ```
 
-**File**: [braze_code_gen/agents/braze_code_generator.py](code/braze_code_gen/agents/braze_code_generator.py)
+**File**: [braze_code_gen/agents/orchestrator.py](code/braze_code_gen/agents/orchestrator.py)
 
 Add streaming method to main orchestrator:
 
 ```python
-class BrazeCodeGenerator:
+class Orchestrator:
     def generate_streaming(self, user_message: str, braze_config: BrazeAPIConfig, website_url: Optional[str] = None):
         """Generate landing page with streaming updates."""
         # Create initial state
@@ -538,7 +538,7 @@ async def astream_with_tokens(self, state: CodeGenerationState):
         # Stream node completions
         elif event["event"] == "on_chain_end":
             node_name = event.get("name", "")
-            if node_name in ["lead", "research", "code_generation", ...]:
+            if node_name in ["planning", "research", "code_generation", ...]:
                 yield {
                     "type": "node_complete",
                     "node": node_name
@@ -589,7 +589,7 @@ async def astream_with_tokens(self, state: CodeGenerationState):
 
 **New code in Phase 3 & 4**:
 1. Add `stream_workflow()` method to [core/workflow.py](code/braze_code_gen/core/workflow.py)
-2. Add `generate_streaming()` method to [agents/braze_code_generator.py](code/braze_code_gen/agents/braze_code_generator.py)
+2. Add `generate_streaming()` method to [agents/orchestrator.py](code/braze_code_gen/agents/orchestrator.py)
 3. Modify `respond()` to generator function in [ui/gradio_app.py](code/braze_code_gen/ui/gradio_app.py)
 
 **Total additional code**: ~100 lines
@@ -841,7 +841,7 @@ webcolors>=1.13        # Color name to hex conversion
 ### Phase 3: Orchestration
 12. ✅ Write all prompts in `prompts/BRAZE_PROMPTS.py` (Already complete from Phase 2)
 13. Implement `core/workflow.py` with router **+ streaming support**
-14. Implement `agents/braze_code_generator.py` main orchestrator **+ streaming methods**
+14. Implement `agents/orchestrator.py` main orchestrator **+ streaming methods**
 15. Add Opik tracing
 
 ### Phase 4: UI
