@@ -97,3 +97,15 @@ htmlcov/
 # Opik Traces (if saved locally)
 .opik/
 traces/
+
+# Temporary test scripts (root level only)
+/test_*.py
+
+# Temporary documentation
+*HOTFIX*.md
+*PHASE*.md
+README_BRAZE_GENERATOR.md
+
+# Cleanup tracking
+CLEANUP_CHECKLIST.md
+README_NEW.md

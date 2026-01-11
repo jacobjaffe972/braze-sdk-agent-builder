@@ -5,9 +5,10 @@ This agent validates generated HTML using Playwright.
 
 import logging
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
+from braze_code_gen.core.llm_factory import create_llm
+from braze_code_gen.core.models import ModelTier
 from braze_code_gen.core.state import CodeGenerationState
 from braze_code_gen.tools.browser_testing import BrowserTester
 from braze_code_gen.prompts.BRAZE_PROMPTS import VALIDATION_AGENT_PROMPT
@@ -20,18 +21,18 @@ class ValidationAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4o-mini",
+        model_tier: ModelTier = ModelTier.VALIDATION,
         temperature: float = 0.3,
         enable_browser_testing: bool = True
     ):
         """Initialize the validation agent.
 
         Args:
-            model: LLM model to use
+            model_tier: LLM tier to use (primary/research/validation)
             temperature: Temperature for generation
             enable_browser_testing: Whether to run actual browser tests
         """
-        self.llm = ChatOpenAI(model=model, temperature=temperature)
+        self.llm = create_llm(tier=model_tier, temperature=temperature)
         self.enable_browser_testing = enable_browser_testing
 
         if enable_browser_testing:

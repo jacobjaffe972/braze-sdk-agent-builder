@@ -5,10 +5,10 @@ This agent adds final polish and exports the landing page to HTML.
 
 import logging
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-from braze_code_gen.core.models import GeneratedCode
+from braze_code_gen.core.llm_factory import create_llm
+from braze_code_gen.core.models import GeneratedCode, ModelTier
 from braze_code_gen.core.state import CodeGenerationState, mark_complete
 from braze_code_gen.utils.exporter import HTMLExporter
 from braze_code_gen.prompts.BRAZE_PROMPTS import FINALIZATION_AGENT_PROMPT
@@ -21,18 +21,18 @@ class FinalizationAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model_tier: ModelTier = ModelTier.PRIMARY,
         temperature: float = 0.3,
         export_dir: str = "/tmp/braze_exports"
     ):
         """Initialize the finalization agent.
 
         Args:
-            model: LLM model to use
+            model_tier: LLM tier to use (primary/research/validation)
             temperature: Temperature for generation
             export_dir: Directory for exported files
         """
-        self.llm = ChatOpenAI(model=model, temperature=temperature)
+        self.llm = create_llm(tier=model_tier, temperature=temperature)
         self.exporter = HTMLExporter(export_dir=export_dir)
 
     def process(self, state: CodeGenerationState) -> dict:

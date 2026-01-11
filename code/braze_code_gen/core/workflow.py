@@ -182,6 +182,7 @@ class BrazeCodeGeneratorWorkflow:
         """
         logger.info("Streaming workflow execution")
 
+        final_state = None
         try:
             for chunk in self.graph.stream(state):
                 # chunk is dict with node name as key
@@ -190,6 +191,9 @@ class BrazeCodeGeneratorWorkflow:
 
                 node_name = list(chunk.keys())[0]
                 node_output = chunk[node_name]
+
+                # Store the latest state
+                final_state = node_output
 
                 # Yield status update
                 yield {
@@ -213,6 +217,16 @@ class BrazeCodeGeneratorWorkflow:
                             "type": "message",
                             "content": last_message.content
                         }
+
+            # Yield final state with export path
+            if final_state and "export_file_path" in final_state:
+                logger.info(f"Yielding complete event with export path: {final_state['export_file_path']}")
+                yield {
+                    "type": "complete",
+                    "export_file_path": final_state["export_file_path"],
+                    "branding_data": final_state.get("branding_data"),
+                    "generated_code": final_state.get("generated_code")
+                }
 
         except Exception as e:
             logger.error(f"Error during workflow streaming: {e}", exc_info=True)

@@ -1,343 +1,429 @@
-# Code Generation Agent Repository
+# Braze SDK Landing Page Generator
 
-Multi-agent code generation system built with LangChain, LangGraph, and Gradio.
+**Multi-agent code generation system for creating branded Braze SDK demo landing pages**
 
----
-
-## Projects
-
-### 1. Braze SDK Landing Page Generator
-**Status**: In Development
-**Location**: `/code/braze_code_gen/` (to be implemented)
-**Purpose**: Generate fully functional, branded Braze SDK demo landing pages from natural language input.
-
-**Features**:
-- **Client Website Branding Extraction**: Analyze customer websites to extract color schemes and typography
-- **6-Agent Workflow**: Lead agent → Research → Code Generation → Validation → Refinement → Finalization
-- **Braze Docs MCP Integration**: Search 50+ cached Braze documentation pages for SDK guidance
-- **Browser Testing**: Playwright integration for automated HTML/CSS/JS validation
-- **HTML Export**: Download generated landing pages with metadata
-
-**Documentation**: See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
-
-### 2. Reference Agent Implementation
-**Location**: [/code/reference_agents/](code/reference_agents/)
-**Purpose**: Working examples of LangChain/LangGraph agent patterns. Reference code only - not used in production.
-
-**Key Patterns**:
-- ReAct Multi-Agent Delegation
-- StateGraph Workflow Orchestration
-- Factory Pattern with Type Safety
-- Tool Integration (@tool decorators)
-- Gradio UI with Metadata-Driven Configuration
-
-**Pattern Documentation**: See [/docs/](docs/) directory
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![LangChain](https://img.shields.io/badge/LangChain-0.3+-green.svg)](https://python.langchain.com/)
+[![License](https://img.shields.io/badge/license-Private-red.svg)]()
 
 ---
 
-## MCP Server
+## 🚀 Overview
 
-### Braze Documentation MCP
-**Location**: [/braze-docs-mcp/](braze-docs-mcp/)
-**Purpose**: MCP server that scrapes and caches Braze documentation for agent access.
+The Braze SDK Landing Page Generator is a sophisticated **multi-agent system** that automatically creates fully functional, branded HTML landing pages featuring Braze SDK integrations. Built with LangGraph and supporting **multiple LLM providers** (OpenAI, Anthropic, Google), it streamlines the process of creating SDK demos for customers.
 
-**Features**:
-- Documentation search across 50+ pages
-- Code example extraction
-- Local caching (455KB cached data in `braze_docs_cache.json`)
-- Resource access via `doc://{page_path}` URIs
-- Search tool for finding relevant documentation
+### ✨ Key Features
 
-**Stack**: FastMCP, BeautifulSoup4, requests
+- 🤖 **6-Agent Workflow**: Sequential pipeline with specialized agents for planning, research, generation, validation, refinement, and finalization
+- 🎨 **Automatic Branding**: Extracts colors and fonts from customer websites
+- 🔄 **Multi-Provider LLM Support**: Choose between OpenAI, Anthropic Claude, or Google Gemini
+- ✅ **Browser Validation**: Playwright-based testing for code quality
+- 📊 **Real-time Streaming**: Watch agents work with live progress updates
+- 📦 **Single-File Output**: Self-contained HTML with inline CSS and JavaScript
+- 🔧 **Natural Language**: No coding required - describe what you want
 
 ---
 
-## Setup
+## 📖 Quick Links
+
+- **[Detailed Documentation](code/braze_code_gen/README.md)** - Complete guide and API reference
+- **[LLM Configuration Guide](code/braze_code_gen/docs/LLM_CONFIGURATION.md)** - Multi-provider setup and cost optimization
+- **[Implementation Plan](docs/IMPLEMENTATION_PLAN.md)** - Architecture and design decisions
+- **[Pattern Documentation](docs/)** - LangChain/LangGraph best practices
+
+---
+
+## 📋 Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [LLM Provider Configuration](#llm-provider-configuration)
+- [Repository Structure](#repository-structure)
+- [Architecture](#architecture)
+- [Documentation](#documentation)
+- [Development Status](#development-status)
+
+---
+
+## 📦 Installation
 
 ### Prerequisites
-- Python 3.11+
-- OpenAI API key
-- (Optional) Tavily API key for web search
 
-### Installation
+- Python 3.10+
+- **LLM API key** (choose one):
+  - OpenAI API key (default)
+  - Anthropic API key
+  - Google API key
+- Braze API credentials
+- (Optional) Playwright for browser testing
 
-1. **Clone Repository**
+### Setup
+
+1. **Clone and navigate**:
    ```bash
-   cd /Users/Jacob.Jaffe/code-gen-agent
+   git clone <repository-url>
+   cd code-gen-agent
    ```
 
-2. **Install Dependencies**
+2. **Create virtual environment**:
    ```bash
    cd code
-   python -m venv .venv
+   python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
    pip install -r requirements.txt
    ```
 
-3. **Configure Environment**
+4. **Install Playwright** (optional, for validation):
    ```bash
-   # Copy example environment file
-   cp .env.example .env  # If example exists
-
-   # Or create .env with:
-   OPENAI_API_KEY=your_openai_key_here
-   TAVILY_API_KEY=your_tavily_key_here
-   OPIK_API_KEY=your_opik_api_here
-    OPIK_WORKSPACE=your_opik_ws_here
-   BRAZE_API_KEY=your_braze_key_here
-   BRAZE_BASE_URL=https://todd.braze.com
+   playwright install chromium
    ```
 
-### Run Braze Code Generator
+5. **Configure environment**:
+   ```bash
+   # Copy template
+   cp ../.env.example ../.env
+
+   # Edit .env with your credentials
+   # MODEL_PROVIDER=openai  # or anthropic, google
+   # OPENAI_API_KEY=sk-...
+   # BRAZE_API_KEY=...
+   # BRAZE_BASE_URL=https://...
+   ```
+
+---
+
+## 🚀 Quick Start
+
+### Launch Web UI
 
 ```bash
-# Once implemented:
+# From repository root
+./launch_ui.sh
+
+# Or manually
 cd code
-python run.py braze
+python -m braze_code_gen
 ```
 
-### Run Reference Agents
+Then open **http://localhost:7860** in your browser.
+
+### Command Line Options
 
 ```bash
-cd code
-python run.py react_multi_agent  # Deep research agent
-python run.py rag_web_search     # Web search agent
-python run.py llm_chaining       # Basic LLM chaining
+# Custom port
+python -m braze_code_gen --port 8080
+
+# Enable public sharing
+python -m braze_code_gen --share
+
+# Disable browser testing (faster)
+python -m braze_code_gen --no-browser-testing
+
+# Debug mode with detailed logs
+python -m braze_code_gen --debug
+```
+
+### Programmatic Usage
+
+```python
+from braze_code_gen.agents.orchestrator import Orchestrator
+from braze_code_gen.core.models import BrazeAPIConfig
+
+# Initialize
+orchestrator = Orchestrator(
+    braze_api_config=BrazeAPIConfig(
+        api_key="your_api_key",
+        rest_endpoint="https://rest.iad-01.braze.com",
+        validated=True
+    ),
+    enable_browser_testing=True
+)
+
+# Generate landing page
+result = orchestrator.generate(
+    user_message="Create a landing page with push notifications for https://nike.com",
+    website_url="https://nike.com"
+)
+
+print(f"Generated: {result['export_file_path']}")
 ```
 
 ---
 
-## Documentation
+## 🔄 LLM Provider Configuration
 
-### Implementation Plans
-- [**IMPLEMENTATION_PLAN.md**](IMPLEMENTATION_PLAN.md) - Detailed Braze generator specification with 5-phase implementation
+The generator supports **three LLM providers** with simple environment-based switching:
 
-### Design Patterns
-Comprehensive pattern documentation extracted from reference implementation:
+### Quick Setup
 
-- [**AGENT_PATTERNS.md**](docs/AGENT_PATTERNS.md) - ReAct delegation, StateGraph workflows, tool integration, Opik tracing
-- [**FACTORY_PATTERN.md**](docs/FACTORY_PATTERN.md) - Factory pattern, AgentType enum, ChatInterface, agent registration
-- [**TOOL_INTEGRATION.md**](docs/TOOL_INTEGRATION.md) - LangChain @tool decorators, MCP integration, safe evaluation, error handling
-- [**UI_PATTERNS.md**](docs/UI_PATTERNS.md) - Gradio chat interfaces, metadata-driven config, state management
-- [**WORKFLOW_ORCHESTRATION.md**](docs/WORKFLOW_ORCHESTRATION.md) - StateGraph, TypedDict state, conditional routing, testing
-- [**WORKFLOW_DIAGRAM.md**](docs/WORKFLOW_DIAGRAM.md) - Visual Mermaid diagrams: architecture, initialization, execution flow, state evolution
+```bash
+# Option 1: OpenAI (default)
+MODEL_PROVIDER=openai
+OPENAI_API_KEY=sk-proj-...
+
+# Option 2: Anthropic Claude
+MODEL_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Option 3: Google Gemini
+MODEL_PROVIDER=google
+GOOGLE_API_KEY=...
+```
+
+### Model Tiers
+
+The system uses a three-tier architecture for optimal cost/performance:
+
+| Tier       | Purpose                   | OpenAI       | Anthropic         | Google              |
+|------------|---------------------------|--------------|-------------------|---------------------|
+| **Primary**    | Code generation, planning | gpt-4o       | claude-opus-4-5   | gemini-2.0-flash    |
+| **Research**   | Documentation search      | gpt-4o-mini  | claude-sonnet-4-5 | gemini-2.0-flash    |
+| **Validation** | Code validation           | gpt-4o-mini  | claude-sonnet-4-5 | gemini-2.0-flash    |
+
+### Cost Comparison
+
+| Provider   | Est. Cost per Run* | Best For                |
+|------------|-------------------|-------------------------|
+| OpenAI     | ~$0.10            | Balance of cost/quality |
+| Anthropic  | ~$0.40            | Highest code quality    |
+| Google     | ~$0.002           | Cost efficiency         |
+
+*Approximate cost for typical landing page generation
+
+**For detailed configuration**, see [LLM Configuration Guide](code/braze_code_gen/docs/LLM_CONFIGURATION.md).
 
 ---
 
-## Architecture
+## 📁 Repository Structure
 
-### Braze Code Generator Architecture
+```
+code-gen-agent/
+├── .env.example              # Environment template
+├── .gitignore                # Ignore patterns
+├── README.md                 # This file
+├── launch_ui.sh              # Launch script
+├── restart_ui.sh             # Restart script
+│
+├── braze-docs-mcp/           # MCP server for Braze documentation
+│   ├── server.py             # MCP implementation
+│   ├── requirements.txt      # MCP dependencies
+│   └── braze_docs_cache.json # Cached docs (50+ pages)
+│
+├── code/                     # Main application
+│   ├── requirements.txt      # Python dependencies
+│   └── braze_code_gen/       # Braze Code Generator
+│       ├── __main__.py       # Entry point
+│       ├── README.md         # Detailed documentation
+│       ├── agents/           # 6 specialized agents
+│       ├── core/             # Workflow, models, LLM factory
+│       ├── docs/             # Product documentation
+│       ├── prompts/          # System prompts
+│       ├── tests/            # Test suites
+│       ├── tools/            # MCP, browser testing, website analyzer
+│       ├── ui/               # Gradio interface
+│       └── utils/            # Utilities and helpers
+│
+└── docs/                     # Architecture & patterns
+    ├── AGENT_PATTERNS.md     # Agent design patterns
+    ├── FACTORY_PATTERN.md    # Factory and interfaces
+    ├── IMPLEMENTATION_PLAN.md # Architecture decisions
+    ├── TOOL_INTEGRATION.md   # Tool usage patterns
+    ├── UI_PATTERNS.md        # Gradio UI patterns
+    ├── WORKFLOW_DIAGRAM.md   # Visual diagrams
+    └── WORKFLOW_ORCHESTRATION.md # StateGraph patterns
+```
+
+---
+
+## 🏗️ Architecture
+
+### Multi-Agent Workflow
 
 ```
 User Input (features + website URL)
     ↓
-[1] Lead Agent
-    ├─ Extract website URL
-    ├─ Analyze website (colors, typography)
-    ├─ Create feature plan with branding constraints
-    └─ Store branding data in state
+[1] Planning Agent
+    ├─ Extract website URL from natural language
+    ├─ Analyze website (colors, fonts, branding)
+    ├─ Create structured feature plan
+    └─ Map features to Braze SDK methods
     ↓
 [2] Research Agent
-    ├─ Search Braze Docs MCP for SDK guidance
+    ├─ Search Braze Docs MCP (50+ cached pages)
+    ├─ Find SDK implementation guidance
     ├─ Extract code examples
-    └─ Collect implementation details
+    └─ Collect best practices
     ↓
 [3] Code Generation Agent
     ├─ Generate HTML/CSS/JS with customer branding
-    ├─ Apply color scheme to CSS variables
-    ├─ Apply typography to font families
+    ├─ Apply extracted color scheme
+    ├─ Apply typography settings
+    ├─ Integrate Braze SDK initialization
     └─ Create self-contained landing page
     ↓
 [4] Validation Agent
     ├─ Test with Playwright (headless browser)
-    ├─ Check Braze SDK initialization
-    ├─ Verify form submissions
-    └─ Report issues
+    ├─ Verify Braze SDK loading
+    ├─ Check JavaScript console for errors
+    ├─ Validate form submissions
+    └─ Generate validation report
     ↓
-[5] Refinement Agent (if validation fails)
-    ├─ Fix reported issues
-    ├─ Re-test changes
+[5] Refinement Agent (if validation fails, max 3 iterations)
+    ├─ Analyze validation issues
+    ├─ Apply targeted fixes
+    ├─ Preserve branding and functionality
     └─ Loop back to validation
     ↓
 [6] Finalization Agent
     ├─ Polish code (comments, formatting)
-    ├─ Export HTML file with metadata
-    └─ Mark complete
+    ├─ Inject metadata
+    ├─ Export HTML file with JSON sidecar
+    └─ Mark workflow complete
     ↓
-User downloads generated landing page
+✅ User downloads generated landing page
 ```
 
-### Reference Agent Architecture
+### Technology Stack
 
-```
-User selects agent mode
-    ↓
-Factory creates agent instance
-    ↓
-Main Orchestrator (ReActMultiAgent)
-    ├─ Delegates to ToolUsingAgent
-    ├─ Delegates to AgenticRAGAgent
-    └─ Delegates to DeepResearchAgent
-        ↓
-DeepResearchAgent workflow (example):
-    research_manager → specialized_research → evaluate
-                            ↑                    ↓
-                            └────────────────finalize
-```
+- **Orchestration**: LangGraph (StateGraph pattern)
+- **LLMs**: Multi-provider (OpenAI, Anthropic, Google) via LangChain
+- **UI**: Gradio with streaming support
+- **Validation**: Playwright (headless browser testing)
+- **Documentation**: Braze Docs MCP server (cached)
+- **Observability**: Opik tracing
+- **Web Scraping**: BeautifulSoup4, cssutils
+- **Data Validation**: Pydantic 2.x
 
 ---
 
-## Repository Structure
+## 📚 Documentation
 
-```
-/Users/Jacob.Jaffe/code-gen-agent/
-├── README.md                         # This file
-├── IMPLEMENTATION_PLAN.md            # Braze generator specification
-├── .env                              # API configuration (gitignored)
-├── .gitignore                        # Ignore patterns
-├── docs/                             # Design pattern documentation
-│   ├── AGENT_PATTERNS.md
-│   ├── FACTORY_PATTERN.md
-│   ├── TOOL_INTEGRATION.md
-│   ├── UI_PATTERNS.md
-│   ├── WORKFLOW_DIAGRAM.md
-│   └── WORKFLOW_ORCHESTRATION.md
-├── braze-docs-mcp/                   # MCP server (critical dependency)
-│   ├── server.py                    # MCP implementation
-│   ├── requirements.txt
-│   ├── braze_docs_cache.json       # Cached docs (455KB)
-│   └── README.md
-└── code/
-    ├── .gitignore
-    ├── requirements.txt             # Python dependencies
-    ├── run.py                       # Entry point
-    ├── reference_agents/            # Reference implementation
-    │   ├── README.md               # Reference code documentation
-    │   ├── app.py                  # Gradio UI
-    │   ├── core/                   # Factory and interfaces
-    │   ├── agents/                 # ReAct multi-agent
-    │   ├── tools/                  # Tool wrappers
-    │   └── examples/               # Example outputs
-    └── braze_code_gen/             # Production code (to be implemented)
-        ├── agents/                 # 6 specialized agents
-        ├── core/                   # State, models, workflow
-        ├── tools/                  # Website analyzer, MCP tools, browser testing
-        ├── prompts/                # Agent prompts
-        ├── ui/                     # Gradio interface
-        ├── utils/                  # Exporter, templates
-        └── tests/                  # Unit and integration tests
-```
+### Product Documentation
+- **[Main Documentation](code/braze_code_gen/README.md)** - Complete user guide, API reference, troubleshooting
+- **[LLM Configuration Guide](code/braze_code_gen/docs/LLM_CONFIGURATION.md)** - Provider setup, cost optimization, model mappings
+- **[UI Documentation](code/braze_code_gen/ui/README.md)** - Gradio interface guide
+
+### Architecture & Patterns
+- **[Implementation Plan](docs/IMPLEMENTATION_PLAN.md)** - Architecture decisions, 5-phase development plan
+- **[Agent Patterns](docs/AGENT_PATTERNS.md)** - ReAct delegation, StateGraph workflows, tool integration
+- **[Factory Pattern](docs/FACTORY_PATTERN.md)** - LLM factory, provider abstraction
+- **[Tool Integration](docs/TOOL_INTEGRATION.md)** - MCP integration, browser testing, web scraping
+- **[UI Patterns](docs/UI_PATTERNS.md)** - Gradio interfaces, streaming, state management
+- **[Workflow Orchestration](docs/WORKFLOW_ORCHESTRATION.md)** - LangGraph StateGraph, routing, error handling
+- **[Workflow Diagram](docs/WORKFLOW_DIAGRAM.md)** - Visual Mermaid diagrams of system architecture
 
 ---
 
-## Development Workflow
+## 🧪 Testing
 
-### Current Phase: Repository Cleanup (Phase 0)
-**Status**: ✅ Complete
+### Run All Tests
 
-- ✅ Created `/docs/` with 5 pattern documentation files
-- ✅ Renamed `/code/deep_research/` to `/code/reference_agents/`
-- ✅ Created `/code/reference_agents/README.md`
-- ✅ Created root `/README.md`
-- ⏳ Update `.gitignore` (next)
-- ⏳ Git commit all changes (next)
-
-### Next Phase: Foundation (Phase 1)
-**Estimated Duration**: 3-4 days
-
-1. Create `/code/braze_code_gen/` directory structure
-2. Implement core state and models (`state.py`, `models.py`)
-3. Implement website analyzer tool
-4. Implement HTML exporter
-5. Implement MCP integration tool
-6. Implement browser testing tool
-7. Create base HTML template
-8. Update `requirements.txt`
-
-### Subsequent Phases: Agents, Orchestration, UI, Testing
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for complete 5-phase plan.
-
----
-
-## Key Technologies
-
-### Core Frameworks
-- **LangChain** 0.3.x - LLM application framework
-- **LangGraph** 0.2.x - Workflow orchestration with StateGraph
-- **Gradio** 5.x - Web UI framework
-- **Pydantic** 2.x - Data validation and structured outputs
-
-### LLM & Tools
-- **OpenAI** gpt-4o, gpt-4o-mini - Primary LLMs
-- **Tavily** - Web search tool
-- **MCP (Model Context Protocol)** - Documentation access
-
-### Web & Testing
-- **BeautifulSoup4** - HTML/CSS parsing
-- **cssutils** - CSS parsing for branding extraction
-- **Playwright** - Browser automation and testing
-- **requests** - HTTP client
-
-### Observability
-- **Opik** - Tracing and monitoring for agent workflows
-
----
-
-## Testing
-
-### Unit Tests
 ```bash
-cd code
-pytest braze_code_gen/tests/test_agents.py -v
+cd code/braze_code_gen/tests
+./run_tests.sh
 ```
 
-### Integration Tests
-```bash
-pytest braze_code_gen/tests/test_workflow.py -v
-```
+### Run Specific Test Suites
 
-### Reference Implementation Tests
 ```bash
-pytest reference_agents/test_agents.py -v
-pytest reference_agents/test_gradio.py -v
+# Unit tests
+pytest tests/test_agents.py -v
+
+# Workflow integration tests
+pytest tests/test_workflow.py -v
+
+# End-to-end tests
+pytest tests/test_e2e.py -v
+
+# UI tests
+pytest tests/test_ui.py -v
 ```
 
 ---
 
-## Contributing
+## 📊 Development Status
 
-This is a personal project repository. For questions or suggestions:
-1. Review [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
-2. Check pattern documentation in [/docs/](docs/)
-3. Examine reference implementation in [/code/reference_agents/](code/reference_agents/)
+| Component                | Status          | Progress |
+|--------------------------|-----------------|----------|
+| LLM Multi-Provider       | ✅ Complete     | 100%     |
+| 6-Agent Workflow         | ✅ Complete     | 100%     |
+| Website Branding Extract | ✅ Complete     | 100%     |
+| Browser Testing          | ✅ Complete     | 100%     |
+| Gradio UI                | ✅ Complete     | 100%     |
+| Braze Docs MCP           | ✅ Complete     | 50+ pages |
+| Documentation            | ✅ Complete     | 8 docs   |
+| Test Coverage            | 🚧 In Progress  | ~70%     |
+
+**Latest Updates**:
+- ✅ Added multi-provider LLM support (OpenAI, Anthropic, Google)
+- ✅ Implemented tier-based model selection
+- ✅ Created comprehensive LLM configuration guide
+- ✅ Updated all 6 agents to use factory pattern
 
 ---
 
-## License
+## 🛠️ Development
+
+### Adding New Features
+
+See the detailed documentation in [code/braze_code_gen/README.md](code/braze_code_gen/README.md#development).
+
+### Debugging
+
+```bash
+# Enable debug mode
+python -m braze_code_gen --debug
+
+# View detailed logs
+tail -f /tmp/braze_exports/*.log
+```
+
+---
+
+## ❓ FAQ
+
+**Q: Which LLM provider should I use?**
+A: Start with Google Gemini for cost efficiency during development. Switch to Anthropic Claude for highest quality, or OpenAI for balance.
+
+**Q: How do I switch providers?**
+A: Update `MODEL_PROVIDER` in `.env` and restart. No code changes needed!
+
+**Q: Can I use different providers for different agents?**
+A: Not currently - all agents use the same provider. This is by design for simplicity.
+
+**Q: What if website branding extraction fails?**
+A: The system falls back to Braze default branding (teal/coral colors, Inter/Poppins fonts).
+
+**Q: How do I customize model names?**
+A: See [LLM Configuration Guide](code/braze_code_gen/docs/LLM_CONFIGURATION.md#advanced-configuration) for programmatic overrides.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with:
+- [LangChain](https://python.langchain.com/) / [LangGraph](https://langchain-ai.github.io/langgraph/) - Workflow orchestration
+- [OpenAI](https://openai.com/) - GPT-4 models
+- [Anthropic](https://www.anthropic.com/) - Claude models
+- [Google](https://ai.google.dev/) - Gemini models
+- [Gradio](https://www.gradio.app/) - Web interface
+- [Playwright](https://playwright.dev/) - Browser automation
+- [Braze](https://www.braze.com/) - SDK and documentation
+
+---
+
+## 📄 License
 
 Private repository. Not licensed for distribution.
 
 ---
 
-## Project Status
+## 📞 Contact
 
-| Component | Status | Progress |
-|-----------|--------|----------|
-| Repository Cleanup | ✅ Complete | 100% |
-| Pattern Documentation | ✅ Complete | 5/5 files |
-| Braze Docs MCP | ✅ Working | 50+ pages cached |
-| Reference Agents | ✅ Working | 9 agent modes |
-| Braze Code Generator | 🚧 Not Started | 0% |
+For questions or issues, please refer to the documentation in `/docs/` and `code/braze_code_gen/README.md`.
 
-**Next Steps**: Begin Phase 1 (Foundation) - implement core state management and tools.
-
----
-
-## References
-
-- **LangChain**: https://python.langchain.com/
-- **LangGraph**: https://langchain-ai.github.io/langgraph/
-- **Gradio**: https://www.gradio.app/
-- **Opik**: https://www.comet.com/docs/opik/
-- **MCP Protocol**: https://modelcontextprotocol.io/
-- **Braze Docs**: https://www.braze.com/docs/
+**Built with ❤️ using Claude Code**

@@ -3,8 +3,101 @@
 This module defines type-safe data models used throughout the workflow.
 """
 
-from typing import List, Optional
+from enum import Enum
+from typing import Dict, List, Optional
 from pydantic import BaseModel, HttpUrl, Field
+
+
+# ============================================================================
+# LLM Configuration
+# ============================================================================
+
+class ModelProvider(str, Enum):
+    """Supported LLM providers."""
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    GOOGLE = "google"
+
+
+class ModelTier(str, Enum):
+    """Model usage tiers."""
+    PRIMARY = "primary"        # High-quality code generation
+    RESEARCH = "research"      # Documentation search, lightweight
+    VALIDATION = "validation"  # Code validation, lightweight
+
+
+class LLMConfig(BaseModel):
+    """LLM provider configuration."""
+
+    provider: ModelProvider = Field(
+        default=ModelProvider.OPENAI,
+        description="LLM provider to use"
+    )
+
+    # Provider-specific API keys
+    openai_api_key: Optional[str] = Field(
+        default=None,
+        description="OpenAI API key"
+    )
+    anthropic_api_key: Optional[str] = Field(
+        default=None,
+        description="Anthropic API key"
+    )
+    google_api_key: Optional[str] = Field(
+        default=None,
+        description="Google API key"
+    )
+
+    # Model mappings per provider
+    model_mappings: Dict[str, Dict[str, str]] = Field(
+        default_factory=lambda: {
+            "openai": {
+                "primary": "gpt-4o",
+                "research": "gpt-4o-mini",
+                "validation": "gpt-4o-mini"
+            },
+            "anthropic": {
+                "primary": "claude-opus-4-5-20251101",
+                "research": "claude-sonnet-4-5-20250929",
+                "validation": "claude-sonnet-4-5-20250929"
+            },
+            "google": {
+                "primary": "gemini-2.0-flash-exp",
+                "research": "gemini-2.0-flash-exp",
+                "validation": "gemini-2.0-flash-exp"
+            }
+        },
+        description="Model name mappings for each provider and tier"
+    )
+
+    def validate_api_key(self) -> bool:
+        """Validate that appropriate API key is set for the current provider."""
+        if self.provider == ModelProvider.OPENAI:
+            return bool(self.openai_api_key)
+        elif self.provider == ModelProvider.ANTHROPIC:
+            return bool(self.anthropic_api_key)
+        elif self.provider == ModelProvider.GOOGLE:
+            return bool(self.google_api_key)
+        return False
+
+    def get_model_name(self, tier: ModelTier) -> str:
+        """Get model name for given tier and current provider."""
+        return self.model_mappings[self.provider.value][tier.value]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "provider": "openai",
+                "openai_api_key": "sk-...",
+                "model_mappings": {
+                    "openai": {
+                        "primary": "gpt-4o",
+                        "research": "gpt-4o-mini",
+                        "validation": "gpt-4o-mini"
+                    }
+                }
+            }
+        }
 
 
 # ============================================================================

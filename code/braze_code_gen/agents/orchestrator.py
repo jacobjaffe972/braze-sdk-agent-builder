@@ -58,15 +58,6 @@ class Orchestrator:
         self.export_dir = export_dir
         self.opik_project_name = opik_project_name
 
-        # Shared LLM instances
-        self.llm_gpt4o = ChatOpenAI(model="gpt-4o", temperature=0.7)  # For code generation
-        self.llm_gpt4o_planning = ChatOpenAI(model="gpt-4o", temperature=0.3)  # For planning
-        self.llm_gpt4o_mini = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)  # For validation/research
-
-        # Shared tools
-        self.website_analyzer = WebsiteAnalyzer()
-        self.html_exporter = HTMLExporter(export_dir=export_dir)
-
         # Browser tester (optional)
         self.browser_tester = None
         if enable_browser_testing:
@@ -105,34 +96,36 @@ class Orchestrator:
 
     def _initialize_agents(self):
         """Initialize all agent instances."""
+        from braze_code_gen.core.models import ModelTier
+
         self.planning_agent = PlanningAgent(
-            llm=self.llm_gpt4o_planning,
-            website_analyzer=self.website_analyzer
+            model_tier=ModelTier.PRIMARY,
+            temperature=0.3
         )
 
         self.research_agent = ResearchAgent(
-            model="gpt-4o-mini",
+            model_tier=ModelTier.RESEARCH,
             temperature=0.3
         )
 
         self.code_generation_agent = CodeGenerationAgent(
-            model="gpt-4o",
+            model_tier=ModelTier.PRIMARY,
             temperature=0.7
         )
 
         self.validation_agent = ValidationAgent(
-            model="gpt-4o-mini",
+            model_tier=ModelTier.VALIDATION,
             temperature=0.3,
             enable_browser_testing=self.enable_browser_testing
         )
 
         self.refinement_agent = RefinementAgent(
-            model="gpt-4o",
+            model_tier=ModelTier.PRIMARY,
             temperature=0.5
         )
 
         self.finalization_agent = FinalizationAgent(
-            model="gpt-4o",
+            model_tier=ModelTier.PRIMARY,
             temperature=0.3,
             export_dir=self.export_dir
         )

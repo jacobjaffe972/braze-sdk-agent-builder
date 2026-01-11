@@ -6,10 +6,10 @@ This agent searches Braze documentation for implementation guidance.
 import logging
 from typing import List
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-from braze_code_gen.core.models import ResearchResult, BrazeDocumentation
+from braze_code_gen.core.llm_factory import create_llm
+from braze_code_gen.core.models import ResearchResult, BrazeDocumentation, ModelTier
 from braze_code_gen.core.state import CodeGenerationState
 from braze_code_gen.tools.mcp_integration import BRAZE_DOCS_TOOLS
 from braze_code_gen.prompts.BRAZE_PROMPTS import RESEARCH_AGENT_PROMPT
@@ -23,22 +23,22 @@ class ResearchAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4o-mini",
+        model_tier: ModelTier = ModelTier.RESEARCH,
         temperature: float = 0.3
     ):
         """Initialize the research agent.
 
         Args:
-            model: LLM model to use
+            model_tier: LLM tier to use (primary/research/validation)
             temperature: Temperature for generation
         """
-        self.llm = ChatOpenAI(model=model, temperature=temperature)
+        self.llm = create_llm(tier=model_tier, temperature=temperature)
 
         # Create ReAct agent with Braze docs tools
+        # Note: state_modifier has been deprecated, we'll add system message manually in process()
         self.agent = create_react_agent(
             self.llm,
-            tools=BRAZE_DOCS_TOOLS,
-            state_modifier=SystemMessage(content=RESEARCH_AGENT_PROMPT)
+            tools=BRAZE_DOCS_TOOLS
         )
 
     def process(self, state: CodeGenerationState) -> dict:
@@ -78,7 +78,10 @@ For each feature, find:
         # Run ReAct agent
         try:
             result = self.agent.invoke({
-                "messages": [HumanMessage(content=research_query)]
+                "messages": [
+                    SystemMessage(content=RESEARCH_AGENT_PROMPT),
+                    HumanMessage(content=research_query)
+                ]
             })
 
             # Extract research findings from messages

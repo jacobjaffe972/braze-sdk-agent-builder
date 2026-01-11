@@ -7,13 +7,14 @@ import re
 import logging
 from typing import Optional, Dict
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from braze_code_gen.core.llm_factory import create_llm
 from braze_code_gen.core.models import (
     SDKFeaturePlan,
     SDKFeature,
     BrandingData,
+    ModelTier,
 )
 from braze_code_gen.core.state import CodeGenerationState
 from braze_code_gen.tools.website_analyzer import WebsiteAnalyzer
@@ -27,16 +28,16 @@ class PlanningAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4o-mini",
-        temperature: float = 0.7
+        model_tier: ModelTier = ModelTier.PRIMARY,
+        temperature: float = 0.3
     ):
         """Initialize the planning agent.
 
         Args:
-            model: LLM model to use
+            model_tier: LLM tier to use (primary/research/validation)
             temperature: Temperature for generation
         """
-        self.llm = ChatOpenAI(model=model, temperature=temperature)
+        self.llm = create_llm(tier=model_tier, temperature=temperature)
         self.website_analyzer = WebsiteAnalyzer()
 
     def process(self, state: CodeGenerationState) -> dict:
@@ -68,6 +69,27 @@ class PlanningAgent:
             except Exception as e:
                 logger.error(f"Error analyzing website: {e}")
                 branding_data = None
+
+        # If no branding data, create default branding
+        if branding_data is None:
+            from braze_code_gen.core.models import BrandingData, ColorScheme, TypographyData
+            branding_data = BrandingData(
+                website_url=customer_website_url or "https://example.com",
+                colors=ColorScheme(
+                    primary="#3b82f6",  # Blue
+                    secondary="#6366f1",  # Indigo
+                    accent="#8b5cf6",  # Purple
+                    background="#ffffff",
+                    text="#1f2937"
+                ),
+                typography=TypographyData(
+                    primary_font="system-ui, -apple-system, sans-serif",
+                    heading_font="system-ui, -apple-system, sans-serif"
+                ),
+                logo_url=None,
+                extraction_success=False
+            )
+            logger.info("Using default branding (no website URL provided)")
 
         # Create feature plan using LLM
         feature_plan = self._create_feature_plan(

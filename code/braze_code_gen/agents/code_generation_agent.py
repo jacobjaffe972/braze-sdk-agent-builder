@@ -5,10 +5,10 @@ This agent generates complete landing pages with customer branding.
 
 import logging
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from braze_code_gen.core.models import GeneratedCode
+from braze_code_gen.core.llm_factory import create_llm
+from braze_code_gen.core.models import GeneratedCode, ModelTier
 from braze_code_gen.core.state import CodeGenerationState
 from braze_code_gen.utils.html_template import generate_base_template
 from braze_code_gen.prompts.BRAZE_PROMPTS import CODE_GENERATION_AGENT_PROMPT
@@ -21,16 +21,16 @@ class CodeGenerationAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model_tier: ModelTier = ModelTier.PRIMARY,
         temperature: float = 0.7
     ):
         """Initialize the code generation agent.
 
         Args:
-            model: LLM model to use (use gpt-4o for better code quality)
+            model_tier: LLM tier to use (primary/research/validation)
             temperature: Temperature for generation
         """
-        self.llm = ChatOpenAI(model=model, temperature=temperature)
+        self.llm = create_llm(tier=model_tier, temperature=temperature)
 
     def process(self, state: CodeGenerationState) -> dict:
         """Generate complete HTML landing page with Braze SDK.

@@ -5,10 +5,10 @@ This agent applies targeted fixes to resolve validation issues.
 
 import logging
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from braze_code_gen.core.models import GeneratedCode
+from braze_code_gen.core.llm_factory import create_llm
+from braze_code_gen.core.models import GeneratedCode, ModelTier
 from braze_code_gen.core.state import CodeGenerationState
 from braze_code_gen.prompts.BRAZE_PROMPTS import REFINEMENT_AGENT_PROMPT
 
@@ -20,16 +20,16 @@ class RefinementAgent:
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model_tier: ModelTier = ModelTier.PRIMARY,
         temperature: float = 0.5
     ):
         """Initialize the refinement agent.
 
         Args:
-            model: LLM model to use (use gpt-4o for better code quality)
+            model_tier: LLM tier to use (primary/research/validation)
             temperature: Temperature for generation
         """
-        self.llm = ChatOpenAI(model=model, temperature=temperature)
+        self.llm = create_llm(tier=model_tier, temperature=temperature)
 
     def process(self, state: CodeGenerationState) -> dict:
         """Refine generated code to fix validation issues.

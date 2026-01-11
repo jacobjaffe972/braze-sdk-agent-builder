@@ -237,7 +237,7 @@ def get_braze_code_examples(
 
     Examples:
     - "initialize Web SDK"
-    - "track custom event"
+    - "log custom event"
     - "set user attributes"
     - "request push permission"
 
