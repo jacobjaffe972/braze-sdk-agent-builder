@@ -207,8 +207,8 @@ class BrazeAPIConfig(BaseModel):
         description="Braze API key (UUID format)",
         min_length=32
     )
-    rest_endpoint: HttpUrl = Field(
-        description="Braze REST endpoint URL"
+    sdk_endpoint: str = Field(
+        description="Braze SDK endpoint for Web SDK initialization (e.g., 'sdk.iad-01.braze.com')"
     )
     validated: bool = Field(
         default=False,
@@ -219,7 +219,7 @@ class BrazeAPIConfig(BaseModel):
         json_schema_extra = {
             "example": {
                 "api_key": "18f10b29-2070-4638-bf4a-833207ce841a",
-                "rest_endpoint": "https://todd.braze.com",
+                "sdk_endpoint": "sdk.iad-01.braze.com",
                 "validated": True
             }
         }

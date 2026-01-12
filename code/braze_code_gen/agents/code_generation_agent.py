@@ -12,6 +12,7 @@ from braze_code_gen.core.models import GeneratedCode, ModelTier
 from braze_code_gen.core.state import CodeGenerationState
 from braze_code_gen.utils.html_template import generate_base_template
 from braze_code_gen.prompts.BRAZE_PROMPTS import CODE_GENERATION_AGENT_PROMPT
+from braze_code_gen.prompts.sdk_reference import SDK_REFERENCE_EXAMPLES
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,8 @@ class CodeGenerationAgent:
             accent_color=branding_data.colors.accent,
             primary_font=branding_data.typography.primary_font,
             heading_font=branding_data.typography.heading_font,
-            base_template="[Base template with Braze SDK initialization and styling]"
+            base_template="[Base template with Braze SDK initialization and styling]",
+            sdk_reference_examples=SDK_REFERENCE_EXAMPLES
         )
 
         # Generate code

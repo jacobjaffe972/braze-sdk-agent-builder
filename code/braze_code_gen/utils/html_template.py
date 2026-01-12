@@ -37,7 +37,7 @@ def generate_base_template(
 
     # Braze configuration
     api_key = braze_config.api_key
-    sdk_endpoint = str(braze_config.rest_endpoint).replace('https://', '')
+    sdk_endpoint = braze_config.sdk_endpoint
 
     template = f'''<!DOCTYPE html>
 <html lang="en">

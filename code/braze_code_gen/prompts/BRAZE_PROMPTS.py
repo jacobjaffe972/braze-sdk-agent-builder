@@ -116,7 +116,6 @@ For each feature, find:
 ## Output Format
 
 Provide a structured research summary with:
-- Documentation references (page URLs)
 - Code examples for each feature
 - Implementation guidance
 - Any warnings or prerequisites
@@ -151,6 +150,13 @@ You will build upon this base template:
 
 {base_template}
 
+## SDK Implementation Reference
+
+The following patterns show correct Braze Web SDK usage.
+Use these as authoritative reference for method signatures and patterns:
+
+{sdk_reference_examples}
+
 ## Your Task
 
 Generate a complete HTML file that:
@@ -175,8 +181,10 @@ Generate a complete HTML file that:
    - Proper error handling
 
 4. **Braze SDK Integration**:
-   - Initialize SDK with provided API key and endpoint
-   - Open session on page load
+   - CRITICAL: The base template already contains the correct braze.initialize() call
+     with the REAL API key and SDK endpoint. DO NOT replace these with placeholders.
+     Preserve the exact values from the base template's initialization code.
+   - Open session on page load (already in base template)
    - Implement all requested SDK methods
    - Add status indicator showing SDK connection
 

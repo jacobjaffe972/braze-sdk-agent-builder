@@ -78,13 +78,13 @@ class BrazeCodeGenUI:
     def validate_api_config(
         self,
         api_key: str,
-        rest_endpoint: str
+        sdk_endpoint: str
     ) -> Tuple[str, Optional[BrazeAPIConfig], Dict, Dict]:
         """Validate Braze API configuration.
 
         Args:
             api_key: Braze API key
-            rest_endpoint: Braze REST endpoint URL
+            sdk_endpoint: Braze SDK endpoint for Web SDK initialization
 
         Returns:
             Tuple of (status_message, api_config, api_section_update, chat_section_update)
@@ -98,9 +98,9 @@ class BrazeCodeGenUI:
                 gr.Accordion(open=False)  # Keep chat section closed
             )
 
-        if not rest_endpoint or not rest_endpoint.startswith("https://"):
+        if not sdk_endpoint:
             return (
-                "❌ REST endpoint must be a valid HTTPS URL (e.g., https://rest.iad-01.braze.com)",
+                "❌ SDK endpoint is required for Web SDK initialization (e.g., sdk.iad-01.braze.com)",
                 None,
                 gr.Accordion(open=True),
                 gr.Accordion(open=False)
@@ -109,7 +109,7 @@ class BrazeCodeGenUI:
         # Create config
         config = BrazeAPIConfig(
             api_key=api_key,
-            rest_endpoint=rest_endpoint,
+            sdk_endpoint=sdk_endpoint,
             validated=True
         )
 
@@ -117,7 +117,7 @@ class BrazeCodeGenUI:
         self.current_api_config = config
         self.orchestrator.set_braze_api_config(config)
 
-        logger.info(f"API configuration validated: {rest_endpoint}")
+        logger.info(f"API configuration validated: {sdk_endpoint}")
 
         return (
             "✅ API configuration validated! You can now generate landing pages.",
@@ -384,14 +384,15 @@ def create_gradio_interface(
                         placeholder="Enter your Braze API key",
                         type="password",
                         lines=1,
-                        value="18f10b29-2070-4638-bf4a-833207ce841a"  # Pre-filled for testing
+                        value=os.getenv("BRAZE_API_KEY", "")
                     )
                 with gr.Column(scale=2):
-                    rest_endpoint_input = gr.Textbox(
-                        label="REST Endpoint",
-                        placeholder="https://rest.iad-01.braze.com",
-                        value=os.getenv("BRAZE_BASE_URL", "https://todd.braze.com"),
-                        lines=1
+                    sdk_endpoint_input = gr.Textbox(
+                        label="SDK Endpoint",
+                        placeholder="sdk.iad-01.braze.com",
+                        value=os.getenv("BRAZE_SDK_ENDPOINT", ""),
+                        lines=1,
+                        info="Used for braze.initialize() baseUrl (e.g., sdk.iad-01.braze.com)"
                     )
                 with gr.Column(scale=1):
                     validate_btn = gr.Button(
@@ -496,7 +497,7 @@ def create_gradio_interface(
         # API validation
         validate_btn.click(
             fn=ui.validate_api_config,
-            inputs=[api_key_input, rest_endpoint_input],
+            inputs=[api_key_input, sdk_endpoint_input],
             outputs=[validation_status, api_config_state, api_section, chat_section]
         )
 
